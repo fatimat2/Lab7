@@ -55,12 +55,18 @@ public class MorseDecoder {
         for (int binIndex = 0; binIndex < totalBinCount; binIndex++) {
             // Get the right number of samples from the inputFile
             // Sum all the samples together and store them in the returnBuffer
+            int numFrames = inputFile.readFrames(sampleBuffer, BIN_SIZE);
+            double sum = 0;
+            for (int sampleIndex = 0; sampleIndex < numFrames; sampleIndex++) {
+                sum += Math.abs(sampleBuffer[sampleIndex]);
+            }
+            returnBuffer[binIndex] = sum;
         }
         return returnBuffer;
     }
 
     /** Power threshold for power or no power. You may need to modify this value. */
-    private static final double POWER_THRESHOLD = 10;
+    private static final double POWER_THRESHOLD = 5;
 
     /** Bin threshold for dots or dashes. Related to BIN_SIZE. You may need to modify this value. */
     private static final int DASH_BIN_COUNT = 8;
@@ -86,8 +92,61 @@ public class MorseDecoder {
         // else if ispower and not waspower
         // else if issilence and wassilence
         // else if issilence and not wassilence
+        String returnString = "";
+        /*int runLength = 0;
+        for (double powerMeasurement : powerMeasurements) {
+            if (powerMeasurement > POWER_THRESHOLD) {
+                if (runLength > 0) {
+                    runLength++;
+                } else {
+                    System.out.println(runLength);
+                    if (runLength < -DASH_BIN_COUNT) {
+                        returnString += " ";
+                    }
+                    runLength = 1;
+                }
+            } else {
+                if (runLength < 0) {
+                    runLength--;
+                } else {
+                    if (runLength > DASH_BIN_COUNT) {
+                        returnString += "-";
+                    } else {
+                        returnString += ".";
+                    }
+                    runLength = -1;
+                }
+            }
+        }*/
+        boolean silence = false;
+        int consecutives = 0;
+        for (double powerMeasurement : powerMeasurements) {
+            if (silence) {
+                if (powerMeasurement > POWER_THRESHOLD) {
+                    if (consecutives > DASH_BIN_COUNT) {
+                        returnString += " ";
+                    }
+                    silence = false;
+                    consecutives = 0;
+                } else {
+                    consecutives++;
+                }
+            } else {
+                if (powerMeasurement > POWER_THRESHOLD) {
+                    consecutives++;
+                } else {
+                    if (consecutives > DASH_BIN_COUNT) {
+                        returnString += "-";
+                    } else {
+                        returnString += ".";
+                    }
+                    silence = true;
+                    consecutives = 0;
+                }
+            }
+        }
+        return returnString;
 
-        return "";
     }
 
     /**
